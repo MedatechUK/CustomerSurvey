@@ -8,11 +8,11 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("SurveyEmailer")> 
+<Assembly: AssemblyTitle("CustomerSurvey")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("HP")> 
-<Assembly: AssemblyProduct("SurveyEmailer")> 
-<Assembly: AssemblyCopyright("Copyright © HP 2014")> 
+<Assembly: AssemblyProduct("CustomerSurvey")> 
+<Assembly: AssemblyCopyright("Copyright © Emerge IT 2014")> 
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>

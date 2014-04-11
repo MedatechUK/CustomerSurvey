@@ -1,23 +1,11 @@
 ﻿Imports System.Net.Mail
 
 Module Emailer
-
-    Sub Main()
-        Dim emailer As New Emailer
-    End Sub
+    Public curDir As String = My.Computer.FileSystem.CurrentDirectory()
 
     Public Class Emailer
         Public Sub New()
-            Dim recipients As New List(Of String)
-            recipients.Add("support@emerge-it.co.uk")
-            Try
-                SendSurvey(recipients, "whatever@emerge-it.co.uk", "test", "ello", "Info", "")
-                Console.WriteLine("Email sent at " & Now)
-            Catch ex As Exception
-                Console.WriteLine("Email not sent: " & ex.ToString())
-            End Try
-
-
+            
         End Sub
         Public Sub SendSurvey(ByVal recipients As List(Of String), _
                             ByVal fromAddress As String, _
@@ -52,7 +40,6 @@ Module Emailer
                 email.Body = body
 
                 server.Credentials = New System.Net.NetworkCredential(userName, password)
-                'server.EnableSsl = True
                 server.Send(email)
                 email.Dispose()
             Catch ex As SmtpException
