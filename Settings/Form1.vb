@@ -3,6 +3,7 @@ Imports System.Xml.Linq
 Imports System.IO
 
 Public Class Form1
+    'TODO: Make prettier
     Dim settingsFile As String = My.Computer.FileSystem.CurrentDirectory() & "settings.xml"
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -17,12 +18,14 @@ Public Class Form1
 
             Dim frequency As Integer = 14
             Dim count As Integer = 10
+            Dim months As Integer = 6
 
-            doc.Root.Add(New XElement("frequency"), frequency)
-            doc.Root.Add(New XElement("count"), count)
+            doc.Root.Add(New XElement("DaysBetweenSurveyRuns"), frequency)
+            doc.Root.Add(New XElement("TimeBetweenEmailingCustomerInMonths"), months)
+            doc.Root.Add(New XElement("NumberCustomersToEmail"), count)
             doc.Save(settingsFile)
 
-            grdSettings.Rows.Add("DaysBetweenSurveys", frequency)
+            grdSettings.Rows.Add("DaysBetweenSurveyRuns", frequency)
             grdSettings.Rows.Add("NumberCustomersToEmail", count)
         Else
             doc = XDocument.Load(settingsFile)
