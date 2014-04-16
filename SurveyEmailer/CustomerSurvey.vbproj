@@ -112,7 +112,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Settings.vb" />
-    <Compile Include="Surveyer.vb" />
     <Compile Include="XMLer.vb" />
   </ItemGroup>
   <ItemGroup>

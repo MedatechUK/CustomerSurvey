@@ -5,8 +5,8 @@ Imports System.IO
 Imports CustomerSurvey.Settings
 
 Public Class Databaser
+    Public Property dbContacts As New Dictionary(Of Integer, List(Of String))
     Public Sub New()
-        Dim contacts As New Dictionary(Of Integer, List(Of String))
         Dim findDB As New Settings
         Dim query As String = "select * from dbo.v_SurveyCount;"
         Try
@@ -31,7 +31,7 @@ Public Class Databaser
                         list.Add(DETAILS)
                         list.Add(DOCNO)
 
-                        contacts.Add(PHONE, list)
+                        dbContacts.Add(PHONE, list)
                     Loop
                 End If
 
