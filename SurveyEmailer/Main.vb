@@ -18,7 +18,7 @@ Module Main
         con = cheat()
 
         con = x.Read(con)
-        If con IsNot Nothing Then
+        If con.Count > 0 Then
             e.SendSurvey(con)
         End If
 

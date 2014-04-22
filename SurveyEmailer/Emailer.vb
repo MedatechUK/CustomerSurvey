@@ -57,7 +57,6 @@ Public Class Emailer
                 email.Dispose()
                 Debug.WriteLine("Sending email failed: " & ex.ToString())
             End Try
-
         Next
 
 

@@ -22,30 +22,33 @@ Public Class XMLer
         If Not File.Exists(settingsFile) Then
             createSettings()
         End If
-        If File.Exists(contactsFile) Then
-            doc = XDocument.Load(contactsFile)
-            settingsDoc = XDocument.Load(settingsFile)
 
-            ' settings(0) = DaysBetweenSurveyRuns
-            ' settings(1) = TimeBetweenEmailingCustomerInMonths
-            ' settings(2) = NumberCustomersToEmail
-            ' settings(3) = DateLastEmailed
-            Dim settings = From x In settingsDoc.Root.Elements
-                           Select x.Value
+        settingsDoc = XDocument.Load(settingsFile)
 
-            ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
-            If settings(3) <> "" Then
-                Dim d1 As String = settings(3).ToString
-                Dim d2 As DateTime = DateTime.Parse(d1)
-                Dim diff As System.TimeSpan = Date.Now.Subtract(d1)
-                If diff.Days < settings(0) Then
-                    contacts.Clear()
-                    Return contacts
-                End If
+        ' settings(0) = DaysBetweenSurveyRuns
+        ' settings(1) = TimeBetweenEmailingCustomerInMonths
+        ' settings(2) = NumberCustomersToEmail
+        ' settings(3) = DateLastEmailed
+        Dim settings = From x In settingsDoc.Root.Elements
+                       Select x.Value
+
+        Dim days As Integer = Convert.ToInt32(settings(0))
+        Dim mons As Integer = Convert.ToInt32(settings(1))
+        Dim numCust As Integer = Convert.ToInt32(settings(2))
+        Dim dateEmailed As String = settings(3).ToString
+
+        ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
+        If dateEmailed <> "" Then
+            Dim diff As System.TimeSpan = Date.Now.Subtract(dateEmailed)
+            If diff.Days < days Then
+                contacts.Clear()
+                Return contacts
             End If
+        End If
 
-            Dim days As Integer = Convert.ToInt32(settings(0))
+        If File.Exists(contactsFile) Then
             Dim phonesToDelete As New List(Of Integer)
+            doc = XDocument.Load(contactsFile)
 
             ' Make sure the contact has not recently been sent a survey
             For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
@@ -56,7 +59,7 @@ Public Class XMLer
                 ' If the contact does not exist in the XML contacts file then skip over this 
                 If emailDate IsNot Nothing Then
                     ' If they are there but have been emailed x or more months ago, skip
-                    If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-days) Then
+                    If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-mons) Then
                         ' If they are there are have been emailed less than x months ago, remove from list to email
                         phonesToDelete.Add(kvp.Key)
                     Else
@@ -69,6 +72,7 @@ Public Class XMLer
                     Dim contactEmail As String = kvp.Value(1)
                     Dim SCdetails As String = kvp.Value(2)
                     Dim SCdocno As String = kvp.Value(3)
+                    Dim emailedDate As String = Date.Now
 
                     doc.Root.Add(New XElement("contact",
                           New XAttribute("id", id),
@@ -76,7 +80,7 @@ Public Class XMLer
                           New XElement("email", contactEmail),
                           New XElement("SCdetails", SCdetails),
                           New XElement("SCdocno", SCdocno),
-                          New XElement("date", emailDate)
+                          New XElement("date", emailedDate)
                           ))
                 End If
             Next
@@ -86,10 +90,10 @@ Public Class XMLer
             Next
 
             ' Remove any contacts that would leave more than the desired number
-            If contacts.Count > Convert.ToInt32(settings(2)) Then
+            If contacts.Count > numCust Then
                 Dim x As Integer = 0
                 For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
-                    If x > (Convert.ToInt32(settings(2)) - 1) Then
+                    If x > (numCust - 1) Then
                         contacts.Remove(kvp.Key)
                     End If
                     x += 1
