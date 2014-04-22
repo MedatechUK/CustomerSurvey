@@ -1,17 +1,13 @@
 ﻿Imports System.Net.Mail
 Imports System.Net.Mail.MailMessage
+Imports System.Xml
+Imports System.Xml.Linq
 
 Public Class Emailer
-    Public curDir As String = My.Computer.FileSystem.CurrentDirectory()
-    Public Sub New()
-
-    End Sub
-    Public Sub SendSurvey(ByVal recipients As List(Of String), _
-                        ByVal fromAddress As String, _
-                        ByVal subject As String, _
-                        ByVal body As String, _
-                        ByVal userName As String, _
-                        ByVal password As String, _
+    Public Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
+                        Optional ByVal fromAddress As String = "info@emerge-it.co.uk", _
+                        Optional ByVal userName As String = "Info", _
+                        Optional ByVal password As String = "", _
                         Optional attachments As List(Of String) = Nothing)
 
         Dim server As SmtpClient = New SmtpClient("blofeld", 25)
@@ -20,42 +16,50 @@ Public Class Emailer
             .PickupDirectoryLocation = "\\blofeld\Pickup"
         End With
 
-        Dim email As New MailMessage()
-        Try
-            ' Email
-            If (attachments IsNot Nothing) Then
-                For Each attachment As String In attachments
-                    email.Attachments.Add(New Attachment(attachment))
-                Next
-            End If
+        For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
+            Dim name As String = kvp.Value(0)
+            Dim contactEmail As String = kvp.Value(1)
+            Dim SCdetails As String = kvp.Value(2)
+            Dim SCdocno As String = kvp.Value(3)
 
+            Dim body As String = CreateEmail(name, SCdocno, SCdetails)
 
-            email.From = New MailAddress(fromAddress)
+            Dim email As New MailMessage()
+            Try
+                If (attachments IsNot Nothing) Then
+                    For Each attachment As String In attachments
+                        email.Attachments.Add(New Attachment(attachment))
+                    Next
+                End If
 
-            For Each recipient As String In recipients
-                email.To.Add(recipient)
-            Next
+                email.To.Add(contactEmail)
+                email.From = New MailAddress(fromAddress)
 
-            email.Subject = subject
-            email.Body = body
-            email.IsBodyHtml = True
+                email.Subject = "Emerge IT Support Customer Survey - Service Call " & SCdocno
+                email.Body = body
+                email.IsBodyHtml = True
 
-            server.Credentials = New System.Net.NetworkCredential(userName, password)
-            server.Send(email)
-            email.Dispose()
-        Catch ex As SmtpException
-            email.Dispose()
-            Debug.WriteLine("Sending email failed: " & ex.ToString())
-        Catch ex As ArgumentOutOfRangeException
-            email.Dispose()
-            Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
-        Catch ex As InvalidOperationException
-            email.Dispose()
-            Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
-        Catch ex As Exception
-            email.Dispose()
-            Debug.WriteLine("Sending email failed: " & ex.ToString())
-        End Try
+                server.Credentials = New System.Net.NetworkCredential(userName, password)
+                server.Send(email)
+                ' Update emailed date in settings
+                emailedSetting()
+                email.Dispose()
+            Catch ex As SmtpException
+                email.Dispose()
+                Debug.WriteLine("Sending email failed: " & ex.ToString())
+            Catch ex As ArgumentOutOfRangeException
+                email.Dispose()
+                Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
+            Catch ex As InvalidOperationException
+                email.Dispose()
+                Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
+            Catch ex As Exception
+                email.Dispose()
+                Debug.WriteLine("Sending email failed: " & ex.ToString())
+            End Try
+
+        Next
+
 
     End Sub
 
@@ -80,11 +84,11 @@ Public Class Emailer
                               "<tr><td valign=""top"">You recently raised service call: " & docno & ", regarding: " & details & "</td></tr>" & _
                               "<tr><td valign=""top"">We would love to hear your thoughts about our support desk.<br/> Please take a moment to answer the short question below.</td></tr><br/><br/>" & _
                               "<tr><td valign=""top"">How satisfied were you with our level of service? (1 is dissatisfied, 5 is delighted)</td></tr><br/>" & _
-                              "<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/"">1</a></td>" & _
-                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/"">2</a></td>" & _
-                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/"">3</a></td>" & _
-                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/"">4</a></td>" & _
-                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/"">5</a></td>" & _
+                              "<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=1"">1</a></td>" & _
+                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=2"">2</a></td>" & _
+                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=3"">3</a></td>" & _
+                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=4"">4</a></td>" & _
+                              "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=5"">5</a></td>" & _
                               "</table><br/>" & _
                               "Thank you for taking the time,<br/>" & _
                               "The Emerge IT support team" & _
@@ -92,5 +96,14 @@ Public Class Emailer
 
         Return email
     End Function
+
+    Private Sub emailedSetting()
+        Dim settingsFile As String = "C:\emerge\survey\settings.xml"
+        Dim doc As New XDocument
+        doc = XDocument.Load(settingsFile)
+        Dim x As XElement = doc.Root.Element("DateLastEmailed")
+        doc.Root.Element("DateLastEmailed").Value = Date.Now
+        doc.Save(Settingsfile)
+    End Sub
 
 End Class

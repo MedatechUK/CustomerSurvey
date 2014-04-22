@@ -1,43 +1,109 @@
-﻿Imports System.Xml
+﻿Imports System.IO
+Imports System.Security.AccessControl
+Imports System.Xml
 Imports System.Xml.Linq
-Imports System.IO
+
 
 Public Class XMLer
-    Dim contactsFile As String = curDir & "contacts.xml"
+    Public contactsFile As String = "C:\emerge\survey\contacts.xml"
+    Public settingsFile As String = "C:\emerge\survey\settings.xml"
+
+    Public Sub New(Optional ByVal dir As String = "C:\emerge\survey")
+        If Not Directory.Exists(dir) Then
+            Directory.CreateDirectory(dir)
+        End If
+    End Sub
 
     Public Function Read(ByVal contacts As Dictionary(Of Integer, List(Of String)))
 
         ' Takes a list of 10 random contacts as dictionary(phone autounique, ("name", "email"))
         Dim doc As New XDocument
-        doc = XDocument.Load(contactsFile)
+        Dim settingsDoc As New XDocument
+        If Not File.Exists(settingsFile) Then
+            createSettings()
+        End If
+        If File.Exists(contactsFile) Then
+            doc = XDocument.Load(contactsFile)
+            settingsDoc = XDocument.Load(settingsFile)
 
-        Dim phonesToDelete As New List(Of Integer)
+            ' settings(0) = DaysBetweenSurveyRuns
+            ' settings(1) = TimeBetweenEmailingCustomerInMonths
+            ' settings(2) = NumberCustomersToEmail
+            ' settings(3) = DateLastEmailed
+            Dim settings = From x In settingsDoc.Root.Elements
+                           Select x.Value
 
-        For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
-            Dim emailDate = From result In doc.Root.Elements
-                   Where result.Attribute("id").Value = kvp.Key
-                   Select result.Element("date")
-
-            ' If the random contact does not exist in the XML contacts file then skip over this 
-            If emailDate IsNot Nothing Then
-                ' If they are there but have been emailed 6 or more months ago, skip
-                If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-6) Then
-                    ' If they are there are have been emailed less than 6 months ago, remove from list to email
-                    phonesToDelete.Add(kvp.Key)
+            ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
+            If settings(3) <> "" Then
+                Dim d1 As String = settings(3).ToString
+                Dim d2 As DateTime = DateTime.Parse(d1)
+                Dim diff As System.TimeSpan = Date.Now.Subtract(d1)
+                If diff.Days < settings(0) Then
+                    contacts.Clear()
+                    Return contacts
                 End If
             End If
-        Next
 
-        For Each x As Integer In phonesToDelete
-            contacts.Remove(x)
-        Next
+            Dim days As Integer = Convert.ToInt32(settings(0))
+            Dim phonesToDelete As New List(Of Integer)
+
+            ' Make sure the contact has not recently been sent a survey
+            For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
+                Dim emailDate = From result In doc.Root.Elements
+                       Where result.Attribute("id").Value = kvp.Key
+                       Select result.Element("date")
+
+                ' If the contact does not exist in the XML contacts file then skip over this 
+                If emailDate IsNot Nothing Then
+                    ' If they are there but have been emailed x or more months ago, skip
+                    If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-days) Then
+                        ' If they are there are have been emailed less than x months ago, remove from list to email
+                        phonesToDelete.Add(kvp.Key)
+                    Else
+                        emailDate.Value = Date.Now
+                    End If
+                Else
+                    ' If their email address is blank then add them to the xml document
+                    Dim id As Integer = kvp.Key
+                    Dim name As String = kvp.Value(0)
+                    Dim contactEmail As String = kvp.Value(1)
+                    Dim SCdetails As String = kvp.Value(2)
+                    Dim SCdocno As String = kvp.Value(3)
+
+                    doc.Root.Add(New XElement("contact",
+                          New XAttribute("id", id),
+                          New XElement("name", name),
+                          New XElement("email", contactEmail),
+                          New XElement("SCdetails", SCdetails),
+                          New XElement("SCdocno", SCdocno),
+                          New XElement("date", emailDate)
+                          ))
+                End If
+            Next
+
+            For Each x As Integer In phonesToDelete
+                contacts.Remove(x)
+            Next
+
+            ' Remove any contacts that would leave more than the desired number
+            If contacts.Count > Convert.ToInt32(settings(2)) Then
+                Dim x As Integer = 0
+                For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
+                    If x > (Convert.ToInt32(settings(2)) - 1) Then
+                        contacts.Remove(kvp.Key)
+                    End If
+                    x += 1
+                Next
+            End If
+        Else
+            writeNew(contacts)
+        End If
 
         Return contacts
     End Function
 
-    Public Sub Write(ByVal contacts As Dictionary(Of Integer, List(Of String)))
+    Public Sub writeNew(ByVal contacts As Dictionary(Of Integer, List(Of String)))
         Dim doc As New XDocument
-
         Dim root As XElement = _
             <contacts>
             </contacts>
@@ -47,16 +113,42 @@ Public Class XMLer
             Dim phone As Integer = kvp.Key
             Dim name As String = kvp.Value(0)
             Dim email As String = kvp.Value(1)
-            Dim emailDate As Date = kvp.Value(2)
+            Dim SCdetails As String = kvp.Value(2)
+            Dim SCdocno As String = kvp.Value(3)
+            Dim emailDate As Date = Date.Now
 
             doc.Root.Add(New XElement("contact",
                                       New XAttribute("id", phone),
                                       New XElement("name", name),
                                       New XElement("email", email),
-                                      New XElement("date", emailDate)))
+                                      New XElement("SCdetails", SCdetails),
+                                      New XElement("SCdocno", SCdocno),
+                                      New XElement("date", emailDate)
+                                      ))
         Next
-
         doc.Save(contactsFile)
+    End Sub
+
+    Private Sub createSettings()
+        Dim doc As New XDocument
+        If Not File.Exists(settingsFile) Then
+            Dim root As XElement = _
+                <settings>
+                </settings>
+            doc.Add(root)
+
+            Dim freq = <DaysBetweenSurveyRuns>14</DaysBetweenSurveyRuns>
+            Dim count = <TimeBetweenEmailingCustomerInMonths>10</TimeBetweenEmailingCustomerInMonths>
+            Dim month = <NumberCustomersToEmail>6</NumberCustomersToEmail>
+            Dim lastEmail = <DateLastEmailed></DateLastEmailed>
+
+            doc.Root.Add(freq)
+            doc.Root.Add(count)
+            doc.Root.Add(month)
+            doc.Root.Add(lastEmail)
+
+            doc.Save(settingsFile)
+        End If
     End Sub
 
 End Class

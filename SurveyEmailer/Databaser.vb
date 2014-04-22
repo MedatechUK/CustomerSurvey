@@ -6,7 +6,9 @@ Imports CustomerSurvey.Settings
 
 Public Class Databaser
     Public Property dbContacts As New Dictionary(Of Integer, List(Of String))
-    Public Sub New()
+
+    Public Function Read()
+        ' Selects all contacts who have had calls in the last month via the SurveyCount view
         Dim findDB As New Settings
         Dim query As String = "select * from dbo.v_SurveyCount;"
         Try
@@ -41,6 +43,7 @@ Public Class Databaser
         Catch ex As Exception
             Debug.WriteLine(ex.ToString)
         End Try
-    End Sub
+        Return dbContacts
+    End Function
 End Class
 

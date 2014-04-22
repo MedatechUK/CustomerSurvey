@@ -4,7 +4,7 @@ Imports System.IO
 
 Public Class Form1
     'TODO: Make prettier
-    Dim settingsFile As String = My.Computer.FileSystem.CurrentDirectory() & "settings.xml"
+    Dim settingsFile As String = "C:\emerge\survey\settings.xml"
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Dim doc As New XDocument
