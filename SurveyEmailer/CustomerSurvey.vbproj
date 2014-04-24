@@ -91,6 +91,7 @@
   <ItemGroup>
     <Compile Include="Databaser.vb" />
     <Compile Include="Emailer.vb" />
+    <Compile Include="Logger.vb" />
     <Compile Include="Main.vb" />
     <Compile Include="My Project\Application1.Designer.vb">
       <AutoGen>True</AutoGen>

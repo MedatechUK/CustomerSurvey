@@ -3,7 +3,11 @@ Imports System.Net.Mail.MailMessage
 Imports System.Xml
 Imports System.Xml.Linq
 
+Imports CustomerSurvey.Logger
+
 Public Class Emailer
+    Dim l As New Logger
+
     Public Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
                         Optional ByVal fromAddress As String = "info@emerge-it.co.uk", _
                         Optional ByVal userName As String = "Info", _
@@ -17,10 +21,16 @@ Public Class Emailer
         End With
 
         For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
+
             Dim name As String = kvp.Value(0)
             Dim contactEmail As String = kvp.Value(1)
             Dim SCdetails As String = kvp.Value(2)
             Dim SCdocno As String = kvp.Value(3)
+
+            l.Log("Email sending", _
+                  "Sending email to: " & _
+                  name & " , " & contactEmail & ". Reference: " & _
+                  SCdocno & ": " & SCdetails)
 
             Dim body As String = CreateEmail(name, SCdocno, SCdetails)
 
@@ -41,24 +51,27 @@ Public Class Emailer
 
                 server.Credentials = New System.Net.NetworkCredential(userName, password)
                 server.Send(email)
-                ' Update emailed date in settings
+
+                'tidy up
+
+                l.Log("Email sent", _
+                      "Sent email to: " & _
+                       name & " , " & contactEmail & ". Reference: " & _
+                       SCdocno & ": " & SCdetails)
+
                 emailedSetting()
                 email.Dispose()
-            Catch ex As SmtpException
-                email.Dispose()
-                Debug.WriteLine("Sending email failed: " & ex.ToString())
-            Catch ex As ArgumentOutOfRangeException
-                email.Dispose()
-                Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
-            Catch ex As InvalidOperationException
-                email.Dispose()
-                Debug.WriteLine("Sending email failed. Check port number. " & ex.ToString())
+
             Catch ex As Exception
                 email.Dispose()
-                Debug.WriteLine("Sending email failed: " & ex.ToString())
+
+                l.Log("Email sending failed", _
+                      "Failed to send email to: " & _
+                       name & " , " & contactEmail & ". Reference: " & _
+                       SCdocno & ": " & SCdetails & vbCrLf & ". Error details: " & _
+                       ex.ToString())
             End Try
         Next
-
 
     End Sub
 
@@ -102,7 +115,7 @@ Public Class Emailer
         doc = XDocument.Load(settingsFile)
         Dim x As XElement = doc.Root.Element("DateLastEmailed")
         doc.Root.Element("DateLastEmailed").Value = Date.Now
-        doc.Save(Settingsfile)
+        doc.Save(settingsFile)
     End Sub
 
 End Class

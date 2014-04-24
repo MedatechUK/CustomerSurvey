@@ -3,8 +3,12 @@ Imports System.Security.AccessControl
 Imports System.Xml
 Imports System.Xml.Linq
 
+Imports CustomerSurvey.Logger
+
 
 Public Class XMLer
+    Dim l As New Logger
+
     Public contactsFile As String = "C:\emerge\survey\contacts.xml"
     Public settingsFile As String = "C:\emerge\survey\settings.xml"
 
@@ -25,29 +29,36 @@ Public Class XMLer
 
         settingsDoc = XDocument.Load(settingsFile)
 
-        ' settings(0) = DaysBetweenSurveyRuns
-        ' settings(1) = TimeBetweenEmailingCustomerInMonths
-        ' settings(2) = NumberCustomersToEmail
-        ' settings(3) = DateLastEmailed
         Dim settings = From x In settingsDoc.Root.Elements
                        Select x.Value
 
-        Dim days As Integer = Convert.ToInt32(settings(0))
-        Dim mons As Integer = Convert.ToInt32(settings(1))
-        Dim numCust As Integer = Convert.ToInt32(settings(2))
-        Dim dateEmailed As String = settings(3).ToString
+        Dim DaysBetweenSurveyRuns As Integer = Convert.ToInt32(settings(0))
+        Dim TimeBetweenEmailingCustomerInMonths As Integer = Convert.ToInt32(settings(1))
+        Dim NumberCustomersToEmail As Integer = Convert.ToInt32(settings(2))
+        Dim DateLastEmailed As String = settings(3).ToString
+
+        l.Log("XML Contacts", _
+              "Processing contacts recieved from database with the following settings: " & vbCrLf & _
+              "DaysBetweenSurveyRuns: " & DaysBetweenSurveyRuns & vbCrLf & _
+              "TimeBetweenEmailingCustomerInMonths: " & TimeBetweenEmailingCustomerInMonths & vbCrLf & _
+              "NumberCustomersToEmail: " & NumberCustomersToEmail & vbCrLf & _
+              "DateLastEmailed: " & DateLastEmailed & ".")
 
         ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
-        If dateEmailed <> "" Then
-            Dim diff As System.TimeSpan = Date.Now.Subtract(dateEmailed)
-            If diff.Days < days Then
+        If DateLastEmailed <> "" Then
+            Dim diff As System.TimeSpan = Date.Now.Subtract(DateLastEmailed)
+            If diff.Days < DaysBetweenSurveyRuns Then
                 contacts.Clear()
                 Return contacts
             End If
         End If
 
+        Dim phonesToDelete As New List(Of Integer)
+
         If File.Exists(contactsFile) Then
-            Dim phonesToDelete As New List(Of Integer)
+            l.Log("XML Contacts", _
+                  "Contacts file exists. Processing...")
+
             doc = XDocument.Load(contactsFile)
 
             ' Make sure the contact has not recently been sent a survey
@@ -56,16 +67,24 @@ Public Class XMLer
                        Where result.Attribute("id").Value = kvp.Key
                        Select result.Element("date")
 
+                Dim x As Integer = NumberCustomersToEmail
                 ' If the contact does not exist in the XML contacts file then skip over this 
-                If emailDate IsNot Nothing Then
+                If emailDate IsNot Nothing And x > 0 Then
                     ' If they are there but have been emailed x or more months ago, skip
-                    If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-mons) Then
+                    If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-TimeBetweenEmailingCustomerInMonths) Then
                         ' If they are there are have been emailed less than x months ago, remove from list to email
                         phonesToDelete.Add(kvp.Key)
+                        l.Log("XML Contacts", _
+                              kvp.Value(0) & " REMOVED, because they have been emailed recently.")
                     Else
+                        l.Log("XML Contacts", _
+                              kvp.Value(0) & " TO BE EMAILED... last emailed " & emailDate.Value)
                         emailDate.Value = Date.Now
+                        x -= 1
                     End If
                 Else
+                    l.Log("XML Contacts", _
+                             kvp.Value(0) & " TO BE EMAILED... never previously been emailed")
                     ' If their email address is blank then add them to the xml document
                     Dim id As Integer = kvp.Key
                     Dim name As String = kvp.Value(0)
@@ -82,6 +101,7 @@ Public Class XMLer
                           New XElement("SCdocno", SCdocno),
                           New XElement("date", emailedDate)
                           ))
+                    x -= 1
                 End If
             Next
 
@@ -89,17 +109,25 @@ Public Class XMLer
                 contacts.Remove(x)
             Next
 
-            ' Remove any contacts that would leave more than the desired number
-            If contacts.Count > numCust Then
-                Dim x As Integer = 0
+            doc.Save(contactsFile)
+        Else
+            If contacts.Count > NumberCustomersToEmail Then
+                Dim x As Integer = NumberCustomersToEmail
                 For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
-                    If x > (numCust - 1) Then
-                        contacts.Remove(kvp.Key)
+                    If x < 1 Then
+                        phonesToDelete.Add(kvp.Key)
                     End If
-                    x += 1
+                    x -= 1
                 Next
             End If
-        Else
+
+            For Each x As Integer In phonesToDelete
+                contacts.Remove(x)
+            Next
+
+            l.Log("XML Contacts", _
+                  "First email run. Using first six from batch.")
+
             writeNew(contacts)
         End If
 

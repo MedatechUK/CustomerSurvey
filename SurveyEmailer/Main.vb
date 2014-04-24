@@ -4,14 +4,16 @@ Imports CustomerSurvey.XMLer
 
 Module Main
     Public Sub Main()
-        Dim d As New Databaser, e As New Emailer, x As New XMLer
+        Dim d As New Databaser, e As New Emailer, x As New XMLer, l As New Logger
 
-        Dim contacts As New Dictionary(Of Integer, List(Of String))
-        Dim emailList As New List(Of String)
+        'l.Log("Email", "test msg")
+
+        'Dim contacts As New Dictionary(Of Integer, List(Of String))
+        'Dim emailList As New List(Of String)
 
         ' Return dictionary of contacts of format:
         ' {AUTOUNIQUE, (NAME, EMAIL, DATELASTEMAILED)}
-        contacts = d.Read()
+        'contacts = d.ListServiceCallContacts()
 
         ' TODO: swap this with contacts for release version
         Dim con As New Dictionary(Of Integer, List(Of String))
