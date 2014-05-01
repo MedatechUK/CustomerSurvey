@@ -1,5 +1,6 @@
 ﻿Imports System.IO
 Imports System.Security.AccessControl
+Imports System.Text
 Imports System.Xml
 Imports System.Xml.Linq
 
@@ -22,27 +23,28 @@ Public Class XMLer
 
         ' Takes a list of 10 random contacts as dictionary(phone autounique, ("name", "email"))
         Dim doc As New XDocument
-        Dim settingsDoc As New XDocument
-        If Not File.Exists(settingsFile) Then
-            createSettings()
-        End If
 
-        settingsDoc = XDocument.Load(settingsFile)
-
-        Dim settings = From x In settingsDoc.Root.Elements
-                       Select x.Value
+        Dim settings = New List(Of String)
+        settings = readSettings()
 
         Dim DaysBetweenSurveyRuns As Integer = Convert.ToInt32(settings(0))
         Dim TimeBetweenEmailingCustomerInMonths As Integer = Convert.ToInt32(settings(1))
         Dim NumberCustomersToEmail As Integer = Convert.ToInt32(settings(2))
         Dim DateLastEmailed As String = settings(3).ToString
+        Dim adminEmailAddress As String = settings(4).ToString
+
+        _adminEmailAddress = adminEmailAddress
+        'logRecipients.Add(_adminEmailAddress)
+        'TODO remove this cheat
+        logRecipients.Add("paul@emerge-it.co.uk")
 
         l.Log("XML Contacts", _
               "Processing contacts recieved from database with the following settings: " & vbCrLf & _
               "DaysBetweenSurveyRuns: " & DaysBetweenSurveyRuns & vbCrLf & _
               "TimeBetweenEmailingCustomerInMonths: " & TimeBetweenEmailingCustomerInMonths & vbCrLf & _
               "NumberCustomersToEmail: " & NumberCustomersToEmail & vbCrLf & _
-              "DateLastEmailed: " & DateLastEmailed & ".")
+              "DateLastEmailed: " & DateLastEmailed & vbCrLf & _
+              "AdminEmailAddress: " & adminEmailAddress & ".")
 
         ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
         If DateLastEmailed <> "" Then
@@ -91,6 +93,7 @@ Public Class XMLer
                     Dim contactEmail As String = kvp.Value(1)
                     Dim SCdetails As String = kvp.Value(2)
                     Dim SCdocno As String = kvp.Value(3)
+                    Dim SCdoc As String = kvp.Value(4)
                     Dim emailedDate As String = Date.Now
 
                     doc.Root.Add(New XElement("contact",
@@ -99,6 +102,7 @@ Public Class XMLer
                           New XElement("email", contactEmail),
                           New XElement("SCdetails", SCdetails),
                           New XElement("SCdocno", SCdocno),
+                          New XElement("SCdoc", SCdoc),
                           New XElement("date", emailedDate)
                           ))
                     x -= 1
@@ -111,11 +115,14 @@ Public Class XMLer
 
             doc.Save(contactsFile)
         Else
+            Dim contactNames As New Stringbuilder
             If contacts.Count > NumberCustomersToEmail Then
                 Dim x As Integer = NumberCustomersToEmail
                 For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
                     If x < 1 Then
                         phonesToDelete.Add(kvp.Key)
+                        contactNames.Append(vbCrLf)
+                        contactNames.Append(kvp.Value(0))
                     End If
                     x -= 1
                 Next
@@ -126,7 +133,8 @@ Public Class XMLer
             Next
 
             l.Log("XML Contacts", _
-                  "First email run. Using first six from batch.")
+                  "First email run. Using first six from batch:" & _
+                  contactNames.ToString)
 
             writeNew(contacts)
         End If
@@ -161,7 +169,30 @@ Public Class XMLer
         doc.Save(contactsFile)
     End Sub
 
-    Private Sub createSettings()
+    Public Function readSettings()
+
+        Dim settingsDoc As New XDocument
+        If Not File.Exists(settingsFile) Then
+            createSettings()
+        End If
+
+        settingsDoc = XDocument.Load(settingsFile)
+
+        Dim settings = From x In settingsDoc.Root.Elements
+                       Select x.Value
+
+        Dim settingsList As New List(Of String)
+
+        settingsList.Add(settings(0).ToString)
+        settingsList.Add(settings(1).ToString)
+        settingsList.Add(settings(2).ToString)
+        settingsList.Add(settings(3).ToString)
+        settingsList.Add(settings(4).ToString)
+
+        Return settingsList
+    End Function
+
+    Public Sub createSettings()
         Dim doc As New XDocument
         If Not File.Exists(settingsFile) Then
             Dim root As XElement = _
@@ -173,11 +204,13 @@ Public Class XMLer
             Dim count = <TimeBetweenEmailingCustomerInMonths>10</TimeBetweenEmailingCustomerInMonths>
             Dim month = <NumberCustomersToEmail>6</NumberCustomersToEmail>
             Dim lastEmail = <DateLastEmailed></DateLastEmailed>
+            Dim adminEmailAddress = <AdminEmailAddress>info@emerge-it.co.uk</AdminEmailAddress>
 
             doc.Root.Add(freq)
             doc.Root.Add(count)
             doc.Root.Add(month)
             doc.Root.Add(lastEmail)
+            doc.Root.Add(adminEmailAddress)
 
             doc.Save(settingsFile)
         End If

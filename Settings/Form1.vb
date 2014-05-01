@@ -19,10 +19,12 @@ Public Class Form1
             Dim frequency As Integer = 14
             Dim count As Integer = 10
             Dim months As Integer = 6
+            Dim email As String = "info@emerge-it.co.uk"
 
             doc.Root.Add(New XElement("DaysBetweenSurveyRuns"), frequency)
             doc.Root.Add(New XElement("TimeBetweenEmailingCustomerInMonths"), months)
             doc.Root.Add(New XElement("NumberCustomersToEmail"), count)
+            doc.Root.Add(New XElement("AdminEmailAddress"), email)
             doc.Save(settingsFile)
 
             grdSettings.Rows.Add("DaysBetweenSurveyRuns", frequency)
