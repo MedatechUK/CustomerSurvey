@@ -1,8 +1,4 @@
-﻿Imports CustomerSurvey.Databaser
-Imports CustomerSurvey.Emailer
-Imports CustomerSurvey.XMLer
-
-Module Main
+﻿Module Main
     Public Property _adminEmailAddress As String
     Public Property logRecipients As New List(Of String)
 
@@ -19,9 +15,9 @@ Module Main
         'contacts = d.ListServiceCallContacts()
 
         ' TODO: swap this with contacts for release version
-        Dim con As New Dictionary(Of Integer, List(Of String))
+        Dim con As Dictionary(Of Integer, List(Of String))
 
-        con = cheat()
+        con = Cheat()
 
         con = x.Read(con)
         If con.Count > 0 Then
@@ -35,7 +31,7 @@ Module Main
 
     End Sub
 
-    Public Function cheat()
+    Public Function Cheat()
         Dim dict As New Dictionary(Of Integer, List(Of String))
         Dim list As New List(Of String)
         Dim l2 As New List(Of String)
@@ -43,12 +39,13 @@ Module Main
         list.Add("paul@emerge-it.co.uk")
         list.Add("Service Call Details")
         list.Add("SC1400001")
+        list.Add("199")
         l2.Add("hoams")
         l2.Add("thomas@emerge-it.co.uk")
         l2.Add("Service call details")
         l2.Add("SC140001")
         dict.Add(1, list)
-        dict.Add(2, l2)
+        'dict.Add(2, l2)
         Return dict
     End Function
 End Module

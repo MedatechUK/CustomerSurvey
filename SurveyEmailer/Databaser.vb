@@ -1,21 +1,16 @@
-﻿Imports System.Configuration
-Imports System.Data.SqlClient
-Imports System.IO
-
-Imports CustomerSurvey.Settings
-Imports CustomerSurvey.Logger
+﻿Imports System.Data.SqlClient
 
 Public Class Databaser
-    Public Property dbContacts As New Dictionary(Of Integer, List(Of String))
+    Public Property DbContacts As New Dictionary(Of Integer, List(Of String))
 
     Dim l As New Logger
 
     Public Function ListServiceCallContacts()
         ' Selects all contacts who have had calls in the last month via the SurveyCount view
-        Dim findDB As New Settings
-        Dim query As String = "select * from dbo.v_SurveyCount;"
+        Dim findDb As New Settings
+        Const query As String = "select * from dbo.v_SurveyCount;"
         Try
-            Dim con As SqlConnection = New SqlConnection(findDB.conString)
+            Dim con As SqlConnection = New SqlConnection(findDb.conString)
             con.Open()
             Dim cmd As New SqlCommand(query, con)
 
@@ -30,7 +25,7 @@ Public Class Databaser
                         Dim EMAIL As String = reader.GetString(2)
                         Dim DETAILS As String = reader.GetString(3)
                         Dim DOCNO As String = reader.GetString(4)
-                        Dim DOC As Integer = reader.GetInt32(5)
+                        Dim DOC As String = reader.GetString(5)
 
                         list.Add(NAME)
                         list.Add(EMAIL)
@@ -38,12 +33,12 @@ Public Class Databaser
                         list.Add(DOCNO)
                         list.Add(DOC)
 
-                        dbContacts.Add(PHONE, list)
+                        DbContacts.Add(PHONE, list)
                     Loop
 
                 End If
                 l.Log("Database connection succeeded", _
-            "Retrieved a list of " & dbContacts.Count.ToString & _
+            "Retrieved a list of " & DbContacts.Count.ToString & _
             " contacts from the database who have had service calls in the last month.")
             Catch ex As Exception
 

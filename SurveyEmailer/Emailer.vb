@@ -1,15 +1,10 @@
 ﻿Imports System.Net.Mail
-Imports System.Net.Mail.MailMessage
 Imports System.Text
-Imports System.Xml
 Imports System.Xml.Linq
 
-Imports CustomerSurvey.Logger
-Imports CustomerSurvey.XMLer
 
 Public Class Emailer
     Dim l As New Logger
-    Dim x As New XMLer
 
     Public Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
                         Optional ByVal fromAddress As String = "info@emerge-it.co.uk", _
@@ -29,14 +24,14 @@ Public Class Emailer
             Dim contactEmail As String = kvp.Value(1)
             Dim SCdetails As String = kvp.Value(2)
             Dim SCdocno As String = kvp.Value(3)
-            Dim doc As String = kvp.Value(4)
+            Dim SCdoc As String = kvp.Value(4)
 
             l.Log("Email sending", _
                   "Sending email to: " & _
                   name & " , " & contactEmail & ". Reference: " & _
                   SCdocno & ": " & SCdetails)
 
-            Dim body As String = CreateEmail(name, SCdocno, SCdetails, doc)
+            Dim body As String = CreateEmail(name, SCdocno, SCdetails, SCdoc).ToString()
 
             Dim email As New MailMessage()
             Try
@@ -56,8 +51,6 @@ Public Class Emailer
                 server.Credentials = New System.Net.NetworkCredential(userName, password)
                 server.Send(email)
 
-                'tidy up
-
                 l.Log("Email sent", _
                       "Sent email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
@@ -65,7 +58,7 @@ Public Class Emailer
                         True, _
                         logRecipients)
 
-                emailedSetting()
+                updateEmailedSetting()
                 email.Dispose()
 
             Catch ex As Exception
@@ -84,11 +77,12 @@ Public Class Emailer
     End Sub
 
     Public Function CreateEmail(ByVal name As String, _
-                                ByVal docno As String, _
+                                ByVal SCdocno As String, _
                                 ByVal details As String,
-                                ByVal doc As String)
-        Dim email As New StringBuilder
-        email.Append("<html  xmlns=""http://www.w3.org/1999/xhtml"">" & _
+                                ByVal SCdoc As String)
+        Dim emailBody As New StringBuilder
+        With emailBody
+            .Append("<html  xmlns=""http://www.w3.org/1999/xhtml"">" & _
                     "<head><meta http-equiv=""Content-Type"" content=""text/html; charset=utf-8""/>" & _
                     "<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" /></head>" & _
                     "<title>Emerge IT - Customer Survey</title>" & _
@@ -103,29 +97,29 @@ Public Class Emailer
                     "<tr class=""center""><td valign=""top""><img src=""http://www.emerge-it.co.uk/support/surveylogo.gif""/></td></tr>" & _
                     "<tr><td class=""center orange"" valign=""top""><h2>Support Desk Survey</h2></td></tr><br/>" & _
                     "<tr><td valign=""top"">Hello " & name & ",</td></tr><br/>" & _
-                    "<tr><td valign=""top"">You recently raised service call: " & docno & ", regarding: " & details & "</td></tr>" & _
+                    "<tr><td valign=""top"">You recently raised service call: " & SCdocno & ", regarding: " & details & "</td></tr>" & _
                     "<tr><td valign=""top"">We would love to hear your thoughts about our support desk.<br/> Please take a moment to answer the short question below.</td></tr><br/><br/>" & _
                     "<tr><td valign=""top"">How satisfied were you with our level of service? (1 is dissatisfied, 5 is delighted)</td></tr><br/>")
 
-        email.Append(String.Format("<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=1"">1</a></td>" & _
+            .Append(String.Format("<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=1"">1</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=2&d={0}"">2</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=3&d={0}"">3</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=4&d={0}"">4</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=5&d={0}"">5</a></td>" & _
-                    "</table><br/>"), doc)
+                    "</table><br/>", SCdoc))
 
-        email.Append("Thank you for taking the time,<br/>" & _
+            .Append("Thank you for taking the time,<br/>" & _
                     "The Emerge IT support team" & _
                     "</body></html>")
+        End With
 
-        Return email
+        Return emailBody
     End Function
 
-    Private Sub emailedSetting()
+    Private Sub updateEmailedSetting()
         Dim settingsFile As String = "C:\emerge\survey\settings.xml"
         Dim doc As New XDocument
         doc = XDocument.Load(settingsFile)
-        Dim x As XElement = doc.Root.Element("DateLastEmailed")
         doc.Root.Element("DateLastEmailed").Value = Date.Now
         doc.Save(settingsFile)
     End Sub

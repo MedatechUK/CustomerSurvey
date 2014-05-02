@@ -1,19 +1,14 @@
 ﻿Imports System
 Imports System.IO
 Imports System.Net.Mail
-Imports System.Net.Mail.MailMessage
 Imports System.Text
-Imports System.Xml
-Imports System.Xml.Linq
-
-Imports CustomerSurvey.XMLer
 
 Public Class Logger
-    Public Property _logPath As String = "C:\emerge\survey\logs\"
-    Public Property _logDir As String = _logPath & Date.Now.Year
-    Public Property _logFile As String = _logDir & "\" & Date.Now.Month & "-" & MonthName(Date.Now.Month) & ".log"
-    Public Property _settingsFile As String = "C:\emerge\survey\settings.xml"
-    Public Property _logEmail As String = "info@emerge-it.co.uk"
+    Public Property LogPath As String = "C:\emerge\survey\logs\"
+    Public Property LogDir As String = LogPath & Date.Now.Year
+    Public Property LogFile As String = LogDir & "\" & Date.Now.Month & "-" & MonthName(Date.Now.Month) & ".log"
+    Public Property SettingsFile As String = "C:\emerge\survey\settings.xml"
+    Public Property LogEmail As String = "info@emerge-it.co.uk"
 
     Public Sub Log(ByVal type As String, _
                    ByVal msg As String, _
@@ -28,7 +23,7 @@ Public Class Logger
             .Append(type & ": ")
             .Append(msg)
         End With
-        Using sw As New StreamWriter(_logFile, True)
+        Using sw As New StreamWriter(logFile, True)
             sw.Write(sb.ToString())
         End Using
         If alsoEmail Then
@@ -37,33 +32,31 @@ Public Class Logger
     End Sub
 
     Public Sub CreateLog()
-        If Not Directory.Exists(_logDir) Then
-            Directory.CreateDirectory(_logDir)
+        If Not Directory.Exists(logDir) Then
+            Directory.CreateDirectory(logDir)
         End If
-        If Not File.Exists(_logFile) Then
-            File.Create(_logFile).Close()
+        If Not File.Exists(logFile) Then
+            File.Create(logFile).Close()
         End If
     End Sub
 
     Public Sub ReadLogSettings()
         Dim x As New XMLer
-        Dim doc As New XDocument
-        Dim settingsDoc As New XDocument
-        If Not File.Exists(_settingsFile) Then
+        If Not File.Exists(settingsFile) Then
             x.createSettings()
         End If
 
-        Dim settings As New List(Of String)
+        Dim settings As List(Of String)
         settings = x.readSettings()
 
         If settings(4) IsNot Nothing Then
-            _logEmail = settings(4)
+            logEmail = settings(4)
         End If
     End Sub
 
     Public Sub SendLogMail(ByVal recipients As List(Of String),
-                           ByVal details As String, _
-                           ByVal msg As String, _
+                           ByVal SCdetails As String, _
+                           ByVal emailBody As String, _
                            Optional ByVal fromAddress As String = "surveys@emerge-it.co.uk", _
                            Optional ByVal userName As String = "Info", _
                         Optional ByVal password As String = "", _
@@ -87,20 +80,23 @@ Public Class Logger
                 email.To.Add(r)
             Next
 
-            email.From = New MailAddress(fromAddress)
-            email.Subject = "Emerge IT Customer Support Survey - " & details
-            email.Body = msg
-            email.IsBodyHtml = True
+            With email
+                .From = New MailAddress(fromAddress)
+                .Subject = "Emerge IT Customer Support Survey - " & SCdetails
+                .Body = emailBody
+                .IsBodyHtml = True
+            End With
 
-            server.Credentials = New System.Net.NetworkCredential(userName, password)
+            server.Credentials = New Net.NetworkCredential(userName, password)
             server.Send(email)
 
             Log("Email sent", _
               "Survey logging email sent to: " & _
                recipients.ToString & _
-               ". Reference: " & details)
+               ". Reference: " & SCdetails)
 
             email.Dispose()
+
         Catch ex As Exception
             email.Dispose()
 
