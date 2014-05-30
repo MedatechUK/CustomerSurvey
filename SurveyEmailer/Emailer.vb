@@ -1,10 +1,9 @@
 ﻿Imports System.Net.Mail
 Imports System.Text
-Imports System.Xml.Linq
 
 
 Public Class Emailer
-    Dim l As New Logger
+    Dim _l As New Logger, _s As New Settings
 
     Public Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
                         Optional ByVal fromAddress As String = "info@emerge-it.co.uk", _
@@ -18,6 +17,8 @@ Public Class Emailer
             .PickupDirectoryLocation = "\\blofeld\Pickup"
         End With
 
+        Dim contactsEmailed As New StringBuilder
+
         For Each kvp As KeyValuePair(Of Integer, List(Of String)) In contacts
 
             Dim name As String = kvp.Value(0)
@@ -26,12 +27,12 @@ Public Class Emailer
             Dim SCdocno As String = kvp.Value(3)
             Dim SCdoc As String = kvp.Value(4)
 
-            l.Log("Email sending", _
+            _l.Log("Email sending", _
                   "Sending email to: " & _
                   name & " , " & contactEmail & ". Reference: " & _
                   SCdocno & ": " & SCdetails)
 
-            Dim body As String = CreateEmail(name, SCdocno, SCdetails, SCdoc).ToString()
+            Dim body As String = CreateEmail(name, SCdocno, SCdetails, SCdoc)
 
             Dim email As New MailMessage()
             Try
@@ -48,31 +49,38 @@ Public Class Emailer
                 email.Body = body
                 email.IsBodyHtml = True
 
-                server.Credentials = New System.Net.NetworkCredential(userName, password)
+                server.Credentials = New Net.NetworkCredential(userName, password)
                 server.Send(email)
 
-                l.Log("Email sent", _
+                _l.Log("Email sent", _
                       "Sent email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
-                       SCdocno & ": " & SCdetails, _
-                        True, _
-                        logRecipients)
+                       SCdocno & ": " & SCdetails)
 
-                updateEmailedSetting()
                 email.Dispose()
+
+                RecordContactsEmailed(contactsEmailed, name, contactEmail, _
+                                      SCdetails, SCdocno, SCdoc)
 
             Catch ex As Exception
                 email.Dispose()
 
-                l.Log("Email sending failed", _
+                _l.Log("Email sending failed", _
                       "Failed to send email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
                        SCdocno & ": " & SCdetails & vbCrLf & ". Error details: " & _
                        ex.ToString(), _
                         True, _
-                        logRecipients)
+                        LogRecipients)
             End Try
         Next
+
+        If contactsEmailed IsNot Nothing Then
+            _l.Log("Surveys sent sent", _
+                  "Sent surveys to: " & vbCrLf & _
+                   contactsEmailed.ToString(),
+                   True, LogRecipients)
+        End If
 
     End Sub
 
@@ -113,15 +121,19 @@ Public Class Emailer
                     "</body></html>")
         End With
 
-        Return emailBody
+        Return emailBody.ToString()
     End Function
 
-    Private Sub updateEmailedSetting()
-        Dim settingsFile As String = "C:\emerge\survey\settings.xml"
-        Dim doc As New XDocument
-        doc = XDocument.Load(settingsFile)
-        doc.Root.Element("DateLastEmailed").Value = Date.Now
-        doc.Save(settingsFile)
+    Private Sub RecordContactsEmailed(ByVal contactsEmailed As StringBuilder, ByVal name As String, _
+                                ByVal email As String, ByVal SCdetails As String, _
+                                ByVal SCdocno As String, ByVal SCdoc As String)
+        With contactsEmailed
+            .Append("Name: " & name & vbCrLf)
+            .Append("Email: " & email & vbCrLf)
+            .Append("Service Call Details: " & SCdetails & vbCrLf)
+            .Append("Service Call Number: " & SCdocno & vbCrLf)
+            .Append("Service Call Autounique: " & SCdoc & vbCrLf)
+            .Append("---------------------------------------------------")
+        End With
     End Sub
-
 End Class

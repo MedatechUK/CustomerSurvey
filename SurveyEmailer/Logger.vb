@@ -7,14 +7,16 @@ Public Class Logger
     Public Property LogPath As String = "C:\emerge\survey\logs\"
     Public Property LogDir As String = LogPath & Date.Now.Year
     Public Property LogFile As String = LogDir & "\" & Date.Now.Month & "-" & MonthName(Date.Now.Month) & ".log"
-    Public Property SettingsFile As String = "C:\emerge\survey\settings.xml"
     Public Property LogEmail As String = "info@emerge-it.co.uk"
+
+    Public Sub New()
+        CreateLog()
+    End Sub
 
     Public Sub Log(ByVal type As String, _
                    ByVal msg As String, _
                    Optional ByVal alsoEmail As Boolean = False, _
                    Optional ByVal logRecipients As List(Of String) = Nothing)
-        CreateLog()
         Dim sb As New StringBuilder()
         With sb
             .Append(vbCrLf)
@@ -23,7 +25,7 @@ Public Class Logger
             .Append(type & ": ")
             .Append(msg)
         End With
-        Using sw As New StreamWriter(logFile, True)
+        Using sw As New StreamWriter(LogFile, True)
             sw.Write(sb.ToString())
         End Using
         If alsoEmail Then
@@ -32,25 +34,11 @@ Public Class Logger
     End Sub
 
     Public Sub CreateLog()
-        If Not Directory.Exists(logDir) Then
-            Directory.CreateDirectory(logDir)
+        If Not Directory.Exists(LogDir) Then
+            Directory.CreateDirectory(LogDir)
         End If
-        If Not File.Exists(logFile) Then
-            File.Create(logFile).Close()
-        End If
-    End Sub
-
-    Public Sub ReadLogSettings()
-        Dim x As New XMLer
-        If Not File.Exists(settingsFile) Then
-            x.createSettings()
-        End If
-
-        Dim settings As List(Of String)
-        settings = x.readSettings()
-
-        If settings(4) IsNot Nothing Then
-            logEmail = settings(4)
+        If Not File.Exists(LogFile) Then
+            File.Create(LogFile).Close()
         End If
     End Sub
 
