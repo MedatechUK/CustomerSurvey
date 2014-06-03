@@ -1,30 +1,34 @@
 ﻿Module Main
-    Public Property _AdminEmailAddress As String
-    Public Property LogRecipients As New List(Of String)
-
     Public Sub Main()
-        Dim d As New Databaser, e As New Emailer, _
-            l As New Logger, s As New Settings, x As New XMLer
-
         Dim contacts As Dictionary(Of Integer, List(Of String))
-        Dim emailList As New List(Of String)
+        Logger.CreateLog()
 
-        If Not s.ReadSettings() Then
-            l.Log("Settings", "Unable to read settings from database." & vbCrLf & _
-                  "Shutting down...", True, LogRecipients)
+        If Not Settings.ReadSettings() Then
+            Logger.Log("Settings", "Unable to read settings from database." & vbCrLf & _
+                  "Shutting down...", True, Settings.LogEmailAddress)
+            Exit Sub
         End If
+
 
         ' Return dictionary of contacts of format:
         ' {AUTOUNIQUE, (NAME, EMAIL, DATELASTEMAILED)}
-        contacts = d.ListServiceCallContacts()
-        contacts = x.ProcessContacts(contacts)
+        contacts = Databaser.ListServiceCallContacts()
+        contacts = XMLer.ProcessContacts(contacts)
 
-        If contacts.Count = x.NumberCustomersToEmail Then
-            e.SendSurvey(contacts)
-        ElseIf contacts.Count > x.NumberCustomersToEmail Then
-
+        If contacts.Count = Settings.NumCustToEmail Then
+            Emailer.SendSurvey(contacts)
+        ElseIf contacts.Count > Settings.NumCustToEmail Then
+            Logger.Log("Email sending failed", _
+                       "Did not send any emails as more than " & _
+                       Settings.NumCustToEmail & " (as defined in settings) contacts " & _
+                       "were passed to the emailer. Please contact Emerge support.",
+                       True, Settings.LogEmailAddress)
         Else
-
+            Logger.Log("Email sending failed", _
+                       "Did not send any emails as less than " & _
+                       Settings.NumCustToEmail & " (as defined in settings) contacts " & _
+                       "were passed to the emailer. Please contact Emerge support.",
+                       True, Settings.LogEmailAddress)
         End If
         ' TODO: swap this with contacts for release version
         'Dim con As Dictionary(Of Integer, List(Of String))
@@ -38,11 +42,7 @@
         'Else
         '    l.Log("Email sending", "Did not send any surveys: list of contacts was empty.")
         'End If
-        s.ReadSettings()
-        Dim y As DateTime = New DateTime(1988, 1, 1).AddMinutes(13885920)
-        Dim yz As TimeSpan = (Date.Now.Subtract(y))
-        Dim lal As Integer = yz.Days
-        Dim z As Int64
+
     End Sub
 
     Public Function Cheat()

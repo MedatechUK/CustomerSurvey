@@ -1,11 +1,8 @@
 ﻿Imports System.Net.Mail
 Imports System.Text
 
-
 Public Class Emailer
-    Dim _l As New Logger, _s As New Settings
-
-    Public Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
+    Public Shared Sub SendSurvey(ByVal contacts As Dictionary(Of Integer, List(Of String)), _
                         Optional ByVal fromAddress As String = "info@emerge-it.co.uk", _
                         Optional ByVal userName As String = "Info", _
                         Optional ByVal password As String = "", _
@@ -27,7 +24,7 @@ Public Class Emailer
             Dim SCdocno As String = kvp.Value(3)
             Dim SCdoc As String = kvp.Value(4)
 
-            _l.Log("Email sending", _
+            Logger.Log("Email sending", _
                   "Sending email to: " & _
                   name & " , " & contactEmail & ". Reference: " & _
                   SCdocno & ": " & SCdetails)
@@ -52,7 +49,7 @@ Public Class Emailer
                 server.Credentials = New Net.NetworkCredential(userName, password)
                 server.Send(email)
 
-                _l.Log("Email sent", _
+                Logger.Log("Email sent", _
                       "Sent email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
                        SCdocno & ": " & SCdetails)
@@ -65,26 +62,26 @@ Public Class Emailer
             Catch ex As Exception
                 email.Dispose()
 
-                _l.Log("Email sending failed", _
+                Logger.Log("Email sending failed", _
                       "Failed to send email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
                        SCdocno & ": " & SCdetails & vbCrLf & ". Error details: " & _
                        ex.ToString(), _
                         True, _
-                        LogRecipients)
+                        Settings.LogEmailAddress)
             End Try
         Next
 
         If contactsEmailed IsNot Nothing Then
-            _l.Log("Surveys sent sent", _
+            Logger.Log("Surveys sent sent", _
                   "Sent surveys to: " & vbCrLf & _
                    contactsEmailed.ToString(),
-                   True, LogRecipients)
+                   True, Settings.LogEmailAddress)
         End If
 
     End Sub
 
-    Public Function CreateEmail(ByVal name As String, _
+    Public Shared Function CreateEmail(ByVal name As String, _
                                 ByVal SCdocno As String, _
                                 ByVal details As String,
                                 ByVal SCdoc As String)
@@ -124,7 +121,7 @@ Public Class Emailer
         Return emailBody.ToString()
     End Function
 
-    Private Sub RecordContactsEmailed(ByVal contactsEmailed As StringBuilder, ByVal name As String, _
+    Private Shared Sub RecordContactsEmailed(ByVal contactsEmailed As StringBuilder, ByVal name As String, _
                                 ByVal email As String, ByVal SCdetails As String, _
                                 ByVal SCdocno As String, ByVal SCdoc As String)
         With contactsEmailed

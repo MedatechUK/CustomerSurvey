@@ -4,19 +4,13 @@ Imports System.Net.Mail
 Imports System.Text
 
 Public Class Logger
-    Public Property LogPath As String = "C:\emerge\survey\logs\"
-    Public Property LogDir As String = LogPath & Date.Now.Year
-    Public Property LogFile As String = LogDir & "\" & Date.Now.Month & "-" & MonthName(Date.Now.Month) & ".log"
-    Public Property LogEmail As String = "info@emerge-it.co.uk"
+    Public Shared Property LogDir As String = "logs\" & Date.Now.Year
+    Public Shared Property LogFile As String = LogDir & "\" & Date.Now.Month & "-" & MonthName(Date.Now.Month) & ".log"
 
-    Public Sub New()
-        CreateLog()
-    End Sub
-
-    Public Sub Log(ByVal type As String, _
+    Public Shared Sub Log(ByVal type As String, _
                    ByVal msg As String, _
                    Optional ByVal alsoEmail As Boolean = False, _
-                   Optional ByVal logRecipients As List(Of String) = Nothing)
+                   Optional ByVal logRecipient As String = "")
         Dim sb As New StringBuilder()
         With sb
             .Append(vbCrLf)
@@ -29,11 +23,11 @@ Public Class Logger
             sw.Write(sb.ToString())
         End Using
         If alsoEmail Then
-            SendLogMail(logRecipients, type, msg)
+            SendLogMail(logRecipient, type, msg)
         End If
     End Sub
 
-    Public Sub CreateLog()
+    Public Shared Sub CreateLog()
         If Not Directory.Exists(LogDir) Then
             Directory.CreateDirectory(LogDir)
         End If
@@ -42,7 +36,7 @@ Public Class Logger
         End If
     End Sub
 
-    Public Sub SendLogMail(ByVal recipients As List(Of String),
+    Public Shared Sub SendLogMail(ByVal recipient As String,
                            ByVal SCdetails As String, _
                            ByVal emailBody As String, _
                            Optional ByVal fromAddress As String = "surveys@emerge-it.co.uk", _
@@ -64,9 +58,7 @@ Public Class Logger
                 Next
             End If
 
-            For Each r As String In recipients
-                email.To.Add(r)
-            Next
+            email.To.Add(recipient)
 
             With email
                 .From = New MailAddress(fromAddress)
@@ -80,7 +72,7 @@ Public Class Logger
 
             Log("Email sent", _
               "Survey logging email sent to: " & _
-               recipients.ToString & _
+               recipient.ToString & _
                ". Reference: " & SCdetails)
 
             email.Dispose()
@@ -90,7 +82,7 @@ Public Class Logger
 
             Log("Email sending failed", _
                     "Failed to send survey logging email to: " & _
-                    recipients.ToString & ". Error details: " & _
+                    recipient.ToString & ". Error details: " & _
                     ex.ToString())
         End Try
 
