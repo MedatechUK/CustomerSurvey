@@ -2,10 +2,10 @@
 Imports System.Text
 Imports System.Xml.Linq
 
-Public Class XMLer
+Public Class ProcessContacts
     Public Shared ContactsFile As String = "contacts.xml"
 
-    Public Shared Function ProcessContacts(ByVal contacts As Dictionary(Of Integer, List(Of String)))
+    Public Shared Function Process(ByVal contacts As Dictionary(Of Integer, List(Of String)))
         ' Takes a list of 10 random contacts as dictionary(phone autounique, ("name", "email"))
 
         Logger.Log("XML Contacts", _
@@ -18,19 +18,6 @@ Public Class XMLer
             "IgnoreSurveyFlag: " & Settings.IgnoreSurveyFlag & vbCrLf & _
             "NumberDaysInPastToCheckForServiceCalls: " & Settings.NumDaysInPast & vbCrLf & _
             "LogEmailAddress: " & Settings.LogEmailAddress)
-
-        ' First, if the program has run in fewer than the DaysBetweenSurveyRuns setting, break out
-        If Settings.DateLastEmailed <> "" Then
-            Dim diff As TimeSpan = Date.Now.Subtract(Settings.DateLastEmailed)
-            If diff.Days < Settings.DaysBetweenSurveys Then
-                contacts.Clear()
-                Logger.Log("XML Contacts", _
-                      "It has been " & diff.Days & " days since the last run, which is less than " & _
-                      "the " & Settings.DaysBetweenSurveys & " days defined in the settings." & vbCrLf & _
-                      "Clearing list of contacts and closing program.")
-                Return contacts
-            End If
-        End If
 
         Dim phonesToDelete As New List(Of Integer)
 
@@ -48,7 +35,7 @@ Public Class XMLer
                        Select result.Element("date")
 
                 ' If the contact does not exist in the XML contacts file then skip over this 
-                If emailDate IsNot Nothing And x > 0 Then
+                If emailDate.Value IsNot Nothing And x > 0 Then
                     ' If they are there but have been emailed x or more months ago, skip
                     If Not FormatDateTime(emailDate.Value, DateFormat.GeneralDate) < Date.Now.AddMonths(-Settings.MonthsBetweenEmails) Then
                         ' If they are there are have been emailed less than x months ago, remove from list to email

@@ -91,7 +91,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Databaser.vb" />
+    <Compile Include="GetContacts.vb" />
     <Compile Include="Emailer.vb" />
     <Compile Include="Logger.vb" />
     <Compile Include="Main.vb" />
@@ -116,7 +116,7 @@
     </Compile>
     <Compile Include="DbSettings.vb" />
     <Compile Include="Settings.vb" />
-    <Compile Include="XMLer.vb" />
+    <Compile Include="ProcessContacts.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

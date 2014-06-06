@@ -33,7 +33,7 @@ Public Class Emailer
 
             Dim email As New MailMessage()
             Try
-                If (attachments IsNot Nothing) Then
+                If attachments IsNot Nothing Then
                     For Each attachment As String In attachments
                         email.Attachments.Add(New Attachment(attachment))
                     Next
@@ -65,7 +65,7 @@ Public Class Emailer
                 Logger.Log("Email sending failed", _
                       "Failed to send email to: " & _
                        name & " , " & contactEmail & ". Reference: " & _
-                       SCdocno & ": " & SCdetails & vbCrLf & ". Error details: " & _
+                       SCdocno & ": " & SCdetails & "<br />" & ". Error details: " & _
                        ex.ToString(), _
                         True, _
                         Settings.LogEmailAddress)
@@ -73,8 +73,8 @@ Public Class Emailer
         Next
 
         If contactsEmailed IsNot Nothing Then
-            Logger.Log("Surveys sent sent", _
-                  "Sent surveys to: " & vbCrLf & _
+            Logger.Log("Surveys sent", _
+                  "Sent surveys to: " & "<br />" & _
                    contactsEmailed.ToString(),
                    True, Settings.LogEmailAddress)
         End If
@@ -92,21 +92,21 @@ Public Class Emailer
                     "<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" /></head>" & _
                     "<title>Emerge IT - Customer Survey</title>" & _
                     "<style type=""text/css"">" & _
-                    "#outlook a {padding:0;} body{width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0;} " & _
+                    "#outlook a {padding:0;} body{width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; margin:0; padding:0;font-family: Calibri, Candara, Segoe, ""Segoe UI"", Optima, Arial, sans-serif;} " & _
                     "#backgroundTable {margin:0; padding:0; width:100% !important; line-height: 100% !important;}" & _
                     "img {outline:none; text-decoration:none; -ms-interpolation-mode: bicubic;}a img {border:none;} .image_fix {display:block;} " & _
                     "table td {border-collapse: collapse;}table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; }" & _
                     "#choose{font-size: 1.5em; color: #6600FF;text-decoration:none;}#choose a{text-decoration:none;}" & _
                     ".center{text-align: center;} .orange{background-color: #F8B96C;}</style>" & _
                     "<body><table cellpadding=""0"" cellspacing=""0"" border=""0"" id=""backgroundTable"">" & _
-                    "<tr class=""center""><td valign=""top""><img src=""http://www.emerge-it.co.uk/support/surveylogo.gif""/></td></tr>" & _
+                    "<tr class=""center""><td valign=""top""><img src=""http://www.emerge-it.co.uk/support/surveylogo.gif"" alt=""Emerge IT Logo""/></td></tr>" & _
                     "<tr><td class=""center orange"" valign=""top""><h2>Support Desk Survey</h2></td></tr><br/>" & _
                     "<tr><td valign=""top"">Hello " & name & ",</td></tr><br/>" & _
-                    "<tr><td valign=""top"">You recently raised service call: " & SCdocno & ", regarding: " & details & "</td></tr>" & _
+                    "<tr><td valign=""top"">You recently raised service call: <i>" & SCdocno & "</i>, regarding: " & details & "</td></tr>" & _
                     "<tr><td valign=""top"">We would love to hear your thoughts about our support desk.<br/> Please take a moment to answer the short question below.</td></tr><br/><br/>" & _
-                    "<tr><td valign=""top"">How satisfied were you with our level of service? (1 is dissatisfied, 5 is delighted)</td></tr><br/>")
+                    "<tr><td valign=""top"">How satisfied were you with our level of service? (1 is dissatisfied, 5 is delighted)</td></tr><br/><br/>")
 
-            .Append(String.Format("<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=1"">1</a></td>" & _
+            .Append(String.Format("<table align=""center"" id=""choose""><td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=1&d={0}"">1</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=2&d={0}"">2</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=3&d={0}"">3</a></td>" & _
                     "<td width=""200""><a href=""http://www.emerge-it.co.uk/support/survey.aspx?q=4&d={0}"">4</a></td>" & _
@@ -125,12 +125,12 @@ Public Class Emailer
                                 ByVal email As String, ByVal SCdetails As String, _
                                 ByVal SCdocno As String, ByVal SCdoc As String)
         With contactsEmailed
-            .Append("Name: " & name & vbCrLf)
-            .Append("Email: " & email & vbCrLf)
-            .Append("Service Call Details: " & SCdetails & vbCrLf)
-            .Append("Service Call Number: " & SCdocno & vbCrLf)
-            .Append("Service Call Autounique: " & SCdoc & vbCrLf)
-            .Append("---------------------------------------------------")
+            .Append("Name: " & name & "<br />")
+            .Append("Email: " & email & "<br />")
+            .Append("Service Call Details: " & SCdetails & "<br />")
+            .Append("Service Call Number: " & SCdocno & "<br />")
+            .Append("Service Call Autounique: " & SCdoc & "<br />")
+            .Append("--------------------------------------------------- <br/>")
         End With
     End Sub
 End Class

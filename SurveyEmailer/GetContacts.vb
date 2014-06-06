@@ -1,6 +1,6 @@
 ﻿Imports System.Data.SqlClient
 
-Public Class Databaser
+Public Class GetContacts
     Public Shared Property DbContacts As New Dictionary(Of Integer, List(Of String))
 
     Public Shared Function ListServiceCallContacts()
@@ -13,7 +13,7 @@ Public Class Databaser
                                 "FROM (SELECT TOP(100) PERCENT dbo.PHONEBOOK.PHONE, dbo.PHONEBOOK.NAME, " & _
                                 "dbo.PHONEBOOK.EMAIL, dbo.DOCUMENTS.DETAILS, dbo.DOCUMENTS.DOCNO, " & _
                                 "dbo.DOCUMENTS.DOC, " & _
-                                "ROW_NUMBER() OVER (PARTITION BY dbo.PHONEBOOK.EMAIL " & _
+                                "ROW_NUMBER() OVER (PARTITION BY dbo.PHONEBOOK.PHONE " & _
                                 "ORDER BY PHONEBOOK.PHONE DESC) rn " & _
                                 "FROM dbo.PHONEBOOK JOIN " & _
                                 "dbo.SERVCALLS ON dbo.PHONEBOOK.PHONE = dbo.SERVCALLS.PHONE JOIN " & _

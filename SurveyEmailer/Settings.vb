@@ -100,4 +100,18 @@ Public Class Settings
         End Try
     End Sub
 
+    Public Shared Function SurveysSentRecently()
+        If DateLastEmailed <> "" Then
+            Dim diff As TimeSpan = Date.Now.Subtract(DateLastEmailed)
+            If diff.Days < DaysBetweenSurveys Then
+                Logger.Log("Settings", _
+                      "It has been " & diff.Days & " days since the last run, which is less than " & _
+                      "the " & DaysBetweenSurveys & " days defined in the settings." & vbCrLf & _
+                      "Closing the program.")
+                Return True
+            Else : Return False
+            End If
+        Else : Return False
+        End If
+    End Function
 End Class
